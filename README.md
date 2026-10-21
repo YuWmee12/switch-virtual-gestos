@@ -1,6 +1,6 @@
 # Switch Virtual Interactivo con Gestos de Mano
 
-Este repositorio contiene el código fuente desarrollado como parte del proyecto de residencia profesional. Consiste en un sistema modular que integra visión artificial para simular la asignación de ancho de banda mediante gestos, comunicándose en tiempo real con un microcontrolador para reflejar los estados físicamente.
+Este repositorio contiene el código fuente desarrollado para la materia de Inteligencia Artificial. Consiste en un sistema modular que integra visión artificial para simular la asignación de ancho de banda mediante gestos, comunicándose en tiempo real con un microcontrolador para reflejar los estados físicamente.
 
 ## Tecnologías Utilizadas
 
@@ -15,7 +15,7 @@ El código está modularizado aplicando buenas prácticas de ingeniería:
 
 - `config.py`: Variables globales y parámetros de calibración.
 - `geometry.py`: Cálculo de distancias y trigonometría de falanges.
-- `switch_logic.py`: Máquina de estados (Selección, Medición, Guardado).
+- `switch_logica.py`: Máquina de estados (Selección, Medición, Guardado).
 - `ui_drawer.py`: Renderizado del menú inferior y gráficos en pantalla.
 - `arduino_link.py`: Gestión del puerto serie.
 - `main.py`: Bucle principal de ejecución.
