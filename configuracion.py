@@ -1,6 +1,4 @@
-"""
-Configuraciones y constantes globales del proyecto
-"""
+
 import cv2
 
 PUERTO_SERIAL = "COM10"
@@ -18,6 +16,7 @@ RATIO_MIN = 0.15
 RATIO_MAX = 1.20
 SUAVIZADO = 0.35
 UMBRAL_POLEGAR = 1.10
+UMBRAL_PELLIZCO = 0.15  # Sensibilidad del gesto de pellizco
 INTERVALO_SERIAL = 0.05
 
 BOX_W, BOX_H, BOX_GAP = 200, 100, 20

@@ -1,10 +1,8 @@
-"""
-Manejo de comunicación serial con Arduino
-"""
+
 import time
 import serial
 import serial.tools.list_ports
-from config import INTERVALO_SERIAL
+from configuracion import INTERVALO_SERIAL
 
 class ArduinoLink:
     def __init__(self, puerto, baudios):

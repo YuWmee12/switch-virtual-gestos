@@ -1,15 +1,11 @@
 # pylint: disable=no-member
-"""
-Archivo principal de ejecución
-SWITCH VIRTUAL CON GESTOS DE MANO
-"""
 import time
 import cv2
 from cvzone.HandTrackingModule import HandDetector
-from config import ANCHO, ALTO, CAMARA, PUERTO_SERIAL, BAUDIOS
-from arduino_link import ArduinoLink
-from switch_logica import Switch
-from ui_drawer import dibujar, mostrar_reporte
+from configuracion import ANCHO, ALTO, CAMARA, PUERTO_SERIAL, BAUDIOS
+from enlace_arduino import ArduinoLink
+from logica_switch import Switch
+from dibujado_ui import dibujar, mostrar_reporte
 
 def main():
     detector = HandDetector(detectionCon=0.6, maxHands=1)
@@ -43,7 +39,11 @@ def main():
                 lm = [(pto[0], pto[1]) for pto in manos[0]["lmList"]]
 
             ahora = time.time()
-            sw.actualizar(lm, ahora)
+            accion = sw.actualizar(lm, ahora)
+            
+            if accion == "SALIR":
+                break
+                
             link.enviar(sw.mensaje_serial())
             dibujar(img, sw, lm, ahora)
             cv2.imshow("SWITCH VIRTUAL", img)

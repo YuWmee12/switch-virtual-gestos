@@ -1,13 +1,11 @@
-"""
-Lógica principal de la máquina de estados
-"""
 from collections import Counter, deque
-from config import SELECCION, MEDICION, GUARDADO, TIEMPO_SELECCION, TIEMPO_ESTABLE_MEDICION, TIEMPO_MOSTRAR_GUARDADO, RATIO_MIN, RATIO_MAX, SUAVIZADO, LIMITES_MB
-from geometry import dist, contar_dedos, puerto_en_punto
+from configuracion import SELECCION, MEDICION, GUARDADO, TIEMPO_SELECCION, TIEMPO_ESTABLE_MEDICION, TIEMPO_MOSTRAR_GUARDADO, RATIO_MIN, RATIO_MAX, SUAVIZADO, LIMITES_MB, UMBRAL_PELLIZCO
+from geometria import dist, contar_dedos, puerto_en_punto, boton_menu_en_punto
 
 class Switch:
     def __init__(self):
         self.modo_sel = "TOQUE"
+        self.pinch_previo = False
         self.reiniciar()
 
     def reiniciar(self):
@@ -40,7 +38,7 @@ class Switch:
         if self.estado == GUARDADO:
             if ahora - self.t_guardado >= TIEMPO_MOSTRAR_GUARDADO:
                 self._a_seleccion()
-            return
+            return None
 
         if lm is None:
             self.hist_conteo.clear()
@@ -49,14 +47,36 @@ class Switch:
             self.t_candidato = None
             self.ref_mb = None
             self.t_estable = None
-            return
+            self.pinch_previo = False
+            return None
+
+        pinch = False
+        palma = dist(lm[0], lm[9])
+        if palma > 10:
+            ratio_pinch = dist(lm[4], lm[8]) / palma
+            pinch = ratio_pinch < UMBRAL_PELLIZCO
+
+        es_nuevo_pinch = pinch and not self.pinch_previo
+        self.pinch_previo = pinch
+
+        btn_menu = boton_menu_en_punto(*lm[8])
+        if btn_menu != -1:
+            if es_nuevo_pinch:
+                if btn_menu == 0: return "SALIR"
+                elif btn_menu == 1: self.reiniciar()
+                elif btn_menu == 2: self.alternar_modo()
+                elif btn_menu == 3: self.guardar(ahora)
+                elif btn_menu == 4: self.cancelar()
+            return None
 
         if self.estado == SELECCION:
-            self._seleccion(lm, ahora)
+            self._seleccion(lm, ahora, es_nuevo_pinch)
         else:
             self._medicion(lm, ahora)
+            
+        return None
 
-    def _seleccion(self, lm, ahora):
+    def _seleccion(self, lm, ahora, es_nuevo_pinch):
         if self.modo_sel == "DEDOS":
             self.hist_conteo.append(contar_dedos(lm))
             self.conteo = Counter(self.hist_conteo).most_common(1)[0][0]
@@ -67,16 +87,16 @@ class Switch:
         if cand != self.candidato:
             self.candidato = cand
             self.t_candidato = ahora if cand else None
-        elif cand and ahora - self.t_candidato >= TIEMPO_SELECCION:
-            self.puerto = cand
-            self.estado = MEDICION
-            self.mensaje = ""
-            self._reset_medicion()
+        elif cand:
+            if (ahora - self.t_candidato >= TIEMPO_SELECCION) or es_nuevo_pinch:
+                self.puerto = cand
+                self.estado = MEDICION
+                self.mensaje = ""
+                self._reset_medicion()
 
     def _medicion(self, lm, ahora):
         palma = dist(lm[0], lm[9])
-        if palma < 1:
-            return
+        if palma < 1: return
         ratio = dist(lm[4], lm[8]) / palma
         if self.ratio_suave is None:
             self.ratio_suave = ratio
@@ -95,9 +115,8 @@ class Switch:
         elif ahora - self.t_estable >= TIEMPO_ESTABLE_MEDICION:
             self.guardar(ahora)
 
-    def guardar(self, ahora):
-        if self.estado != MEDICION:
-            return
+    def guardar(self, ahora=None):
+        if self.estado != MEDICION: return
         limite = LIMITES_MB[self.puerto - 1]
         mb = int(round(self.valor_mb))
         
@@ -107,9 +126,13 @@ class Switch:
             self.asignado_dedos[self.puerto - 1] = mb
 
         self.pct_guardado = int(round(100 * mb / limite)) if limite > 0 else 0
-        self.mensaje = f"GUARDADO ({self.modo_sel}): PORT {self.puerto} = {mb} MB"
+        self.mensaje = f"GUARDADO ({self.modo_sel}): PUERTO {self.puerto} = {mb} MB"
         self.estado = GUARDADO
-        self.t_guardado = ahora
+        if ahora is not None:
+            self.t_guardado = ahora
+        else:
+            import time
+            self.t_guardado = time.time()
 
     def cancelar(self):
         if self.estado == MEDICION:
